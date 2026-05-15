@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>英语闯关冒险 · 外研三下</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; min-height: 100vh; font-family: 'Nunito', 'PingFang SC', sans-serif; overflow-x: hidden; }
+
+    body.theme-jungle { background: linear-gradient(135deg, #0d3b1e 0%, #1a5c2e 40%, #2d7a40 100%); }
+    body.theme-body   { background: linear-gradient(135deg, #1a0a2e 0%, #2d1060 40%, #4a1d8a 100%); }
+    body.theme-food   { background: linear-gradient(135deg, #3d0a00 0%, #7a1a00 40%, #c43200 100%); }
+    body.theme-hobby  { background: linear-gradient(135deg, #0a1a3d 0%, #102060 40%, #1a3d99 100%); }
+    body.theme-time   { background: linear-gradient(135deg, #1a1a3d 0%, #2d2d6b 40%, #3d3d99 100%); }
+    body.theme-week   { background: linear-gradient(135deg, #1a2e1a 0%, #2d5a2d 40%, #3d7a3d 100%); }
+    body.theme-menu   { background: linear-gradient(135deg, #1a0533 0%, #2d0a5c 40%, #4a1280 100%); }
+
+    #particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+
+    .screen {
+      position: relative; z-index: 10; width: 100%; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.5s;
+    }
+    .screen.active { opacity: 1; pointer-events: all; }
+
+    .menu-title { font-size: clamp(26px,5vw,48px); font-weight: 900; text-align: center; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,.4); margin-bottom: 6px; }
+    .menu-sub { font-size: 14px; color: rgba(255,255,255,.65); text-align: center; margin-bottom: 22px; }
+    .player-name-row { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.2); border-radius: 50px; padding: 8px 20px; margin-bottom: 20px; }
+    .player-name-row input { background: none; border: none; outline: none; color: #fff; font-size: 15px; font-family: inherit; width: 110px; }
+    .player-name-row input::placeholder { color: rgba(255,255,255,.4); }
+    .player-name-row span { color: rgba(255,255,255,.5); font-size: 13px; }
+
+    .unit-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; max-width: 560px; width: 100%; }
+    .unit-card { border-radius: 18px; padding: 14px 10px; text-align: center; cursor: pointer; transition: transform .2s; border: 2px solid rgba(255,255,255,.15); position: relative; overflow: hidden; }
+    .unit-card:hover { transform: translateY(-4px) scale(1.03); }
+    .unit-card:active { transform: scale(.97); }
+    .unit-card .unit-num { font-size: 10px; font-weight: 700; background: rgba(255,255,255,.2); border-radius: 20px; padding: 2px 10px; display: inline-block; margin-bottom: 5px; letter-spacing: 1px; }
+    .unit-card .unit-icon { font-size: 36px; margin-bottom: 4px; }
+    .unit-card .unit-name { font-size: 12px; font-weight: 700; color: #fff; line-height: 1.3; }
+    .unit-card .unit-theme { font-size: 10px; color: rgba(255,255,255,.6); margin-top: 2px; }
+    .unit-card:nth-child(1) { background: linear-gradient(135deg,#1a5c2e,#2d7a40); }
+    .unit-card:nth-child(2) { background: linear-gradient(135deg,#2d1060,#6b2daa); }
+    .unit-card:nth-child(3) { background: linear-gradient(135deg,#7a1a00,#c43200); }
+    .unit-card:nth-child(4) { background: linear-gradient(135deg,#102060,#1a3d99); }
+    .unit-card:nth-child(5) { background: linear-gradient(135deg,#2d2d6b,#4a4aaa); }
+    .unit-card:nth-child(6) { background: linear-gradient(135deg,#1a3d1a,#2d6b2d 100%); }
+
+    .rank-btn { margin-top: 18px; background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.25); border-radius: 50px; color: #fff; font-size: 14px; font-weight: 700; padding: 10px 28px; cursor: pointer; font-family: inherit; transition: all .2s; }
+    .rank-btn:hover { background: rgba(255,255,255,.2); }
+
+    .timer-bar { position: fixed; top: 0; left: 0; width: 100%; height: 6px; background: rgba(0,0,0,.3); z-index: 100; }
+    .timer-fill { height: 100%; background: linear-gradient(90deg,#4ade80,#facc15,#ef4444); transition: width .2s linear; }
+
+    .game-hud { position: fixed; top: 10px; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; z-index: 50; }
+    .hud-score, .hud-qcount { background: rgba(0,0,0,.4); border-radius: 50px; padding: 6px 16px; color: #fff; font-size: 14px; font-weight: 700; backdrop-filter: blur(10px); }
+
+    .question-card { background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.2); border-radius: 24px; padding: 24px 20px; max-width: 540px; width: 100%; text-align: center; backdrop-filter: blur(15px); box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+    .q-unit-badge { display: inline-block; font-size: 11px; font-weight: 700; background: rgba(255,255,255,.2); border-radius: 20px; padding: 3px 14px; color: #fff; margin-bottom: 10px; letter-spacing: 1px; }
+    .q-type-label { font-size: 12px; color: rgba(255,255,255,.55); margin-bottom: 8px; }
+    .q-word { font-size: clamp(24px,6vw,44px); font-weight: 900; color: #fff; margin-bottom: 4px; line-height: 1.3; }
+    .q-emoji { font-size: 68px; margin-bottom: 8px; }
+    .q-hint { font-size: 12px; color: rgba(255,255,255,.4); margin-top: 8px; font-style: italic; }
+
+    .unit-theme-banner { font-size: clamp(18px,4vw,26px); font-weight: 900; color: #fff; text-align: center; margin-bottom: 8px; text-shadow: 0 4px 20px rgba(0,0,0,.4); }
+    .unit-theme-sub { font-size: 13px; color: rgba(255,255,255,.55); text-align: center; margin-bottom: 16px; }
+
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 540px; width: 100%; }
+    .opt-btn { background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.15); border-radius: 14px; padding: 14px 10px; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; transition: all .2s; font-family: inherit; line-height: 1.4; min-height: 52px; display: flex; align-items: center; justify-content: center; }
+    .opt-btn:hover:not(:disabled) { background: rgba(255,255,255,.2); border-color: rgba(255,255,255,.4); transform: scale(1.02); }
+    .opt-btn:active:not(:disabled) { transform: scale(.97); }
+    .opt-btn.correct { background: rgba(74,222,128,.3) !important; border-color: #4ade80 !important; animation: pop .4s ease; }
+    .opt-btn.wrong   { background: rgba(239,68,68,.3) !important; border-color: #ef4444 !important; animation: shake .4s ease; }
+    .opt-btn:disabled { cursor: default; }
+
+    @keyframes pop  { 0%{transform:scale(1)} 50%{transform:scale(1.08)} 100%{transform:scale(1)} }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+    .result-card { background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.2); border-radius: 28px; padding: 28px 22px; max-width: 460px; width: 100%; text-align: center; backdrop-filter: blur(15px); }
+    .result-grade { font-size: 68px; margin-bottom: 6px; }
+    .result-title { font-size: 20px; font-weight: 900; color: #fff; margin-bottom: 4px; }
+    .result-sub { font-size: 13px; color: rgba(255,255,255,.6); margin-bottom: 18px; }
+    .result-stars { font-size: 30px; margin-bottom: 14px; }
+    .result-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
+    .stat-item { background: rgba(255,255,255,.08); border-radius: 12px; padding: 10px 6px; }
+    .stat-val { font-size: 24px; font-weight: 900; color: #fbbf24; }
+    .stat-label { font-size: 10px; color: rgba(255,255,255,.45); margin-top: 2px; }
+    .result-words { background: rgba(255,255,255,.07); border-radius: 12px; padding: 12px; margin-bottom: 16px; text-align: left; }
+    .result-words-title { font-size: 11px; color: rgba(255,255,255,.45); margin-bottom: 6px; }
+    .result-words-list { font-size: 12px; color: rgba(255,255,255,.75); line-height: 1.8; }
+
+    .btn-primary-game { padding: 13px 32px; border: none; border-radius: 50px; font-size: 15px; font-weight: 800; color: #fff; cursor: pointer; font-family: inherit; background: linear-gradient(135deg,#7c3aed,#a855f7); box-shadow: 0 8px 25px rgba(168,85,247,.4); transition: transform .2s; }
+    .btn-primary-game:active { transform: scale(.97); }
+    .btn-secondary-game { padding: 11px 26px; border: 2px solid rgba(255,255,255,.3); border-radius: 50px; font-size: 13px; font-weight: 700; color: #fff; cursor: pointer; font-family: inherit; background: rgba(255,255,255,.08); margin-top: 8px; transition: all .2s; }
+    .btn-secondary-game:hover { background: rgba(255,255,255,.15); }
+
+    .rank-card { background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.15); border-radius: 24px; padding: 22px 20px; max-width: 460px; width: 100%; backdrop-filter: blur(15px); }
+    .rank-title { font-size: 18px; font-weight: 900; color: #fff; text-align: center; margin-bottom: 16px; }
+    .rank-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+    .rank-tab { flex: 1; min-width: 55px; padding: 7px 4px; border: 2px solid rgba(255,255,255,.15); border-radius: 12px; background: rgba(255,255,255,.05); color: rgba(255,255,255,.6); font-size: 11px; font-weight: 700; cursor: pointer; text-align: center; font-family: inherit; transition: all .2s; }
+    .rank-tab.active { background: rgba(168,85,247,.3); border-color: #a855f7; color: #fff; }
+    .rank-list { max-height: 340px; overflow-y: auto; }
+    .rank-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 12px; margin-bottom: 5px; background: rgba(255,255,255,.05); }
+    .rank-item:nth-child(1) { background: rgba(251,191,36,.15); border: 1px solid rgba(251,191,36,.3); }
+    .rank-item:nth-child(2) { background: rgba(148,163,184,.1); border: 1px solid rgba(148,163,184,.2); }
+    .rank-item:nth-child(3) { background: rgba(180,120,60,.1); border: 1px solid rgba(180,120,60,.2); }
+    .rank-medal { font-size: 17px; min-width: 22px; text-align: center; }
+    .rank-name { flex: 1; font-size: 13px; font-weight: 700; color: #fff; }
+    .rank-score { font-size: 13px; font-weight: 800; color: #fbbf24; }
+    .rank-unit { font-size: 10px; color: rgba(255,255,255,.4); margin-top: 1px; }
+
+    .intro-card { background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.2); border-radius: 28px; padding: 32px 24px; max-width: 480px; width: 100%; text-align: center; backdrop-filter: blur(15px); }
+    .intro-icon { font-size: 74px; margin-bottom: 14px; animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    .intro-title { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 6px; }
+    .intro-theme { font-size: 13px; color: rgba(255,255,255,.6); margin-bottom: 14px; }
+    .intro-info { background: rgba(255,255,255,.07); border-radius: 14px; padding: 14px; margin-bottom: 18px; font-size: 13px; color: rgba(255,255,255,.7); line-height: 1.8; }
+    .intro-info span { color: #fbbf24; font-weight: 700; }
+    .name-input-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .name-input-group label { font-size: 12px; color: rgba(255,255,255,.55); text-align: left; }
+    .name-input-group input { background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.2); border-radius: 14px; padding: 11px 16px; color: #fff; font-size: 15px; font-family: inherit; outline: none; text-align: center; }
+    .name-input-group input:focus { border-color: #a855f7; box-shadow: 0 0 0 3px rgba(168,85,247,.2); }
+
+    .float-deco { position: fixed; font-size: 38px; z-index: 5; opacity: .14; pointer-events: none; animation: floatDeco 6s ease-in-out infinite; }
+    @keyframes floatDeco { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-18px) rotate(10deg)} }
+
+    .feedback-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 200; pointer-events: none; opacity: 0; transition: opacity .2s; }
+    .feedback-overlay.show { opacity: 1; }
+    .feedback-text { font-size: clamp(44px,11vw,76px); font-weight: 900; text-shadow: 0 6px 30px rgba(0,0,0,.5); animation: feedbackPop .8s ease forwards; }
+    @keyframes feedbackPop { 0%{transform:scale(.5);opacity:0} 30%{transform:scale(1.2);opacity:1} 60%{transform:scale(1)} 100%{transform:scale(1);opacity:0} }
+
+    .fade-up { animation: fadeUp .4s ease forwards; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+
+    /* vocab highlight box */
+    .vocab-hint { background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.3); border-radius: 10px; padding: 8px 14px; margin-top: 10px; font-size: 12px; color: rgba(251,191,36,.8); display: inline-block; max-width: 90%; }
+  </style>
+</head>
+<body class="theme-menu">
+<canvas id="particles"></canvas>
+<div id="deco-container"></div>
+
+<div class="feedback-overlay" id="feedback-overlay">
+  <div class="feedback-text" id="feedback-text"></div>
+</div>
+
+<div class="timer-bar" id="timer-bar" style="display:none">
+  <div class="timer-fill" id="timer-fill" style="width:100%"></div>
+</div>
+
+<!-- MENU -->
+<div class="screen active" id="screen-menu">
+  <div style="animation:fadeUp .5s ease forwards">
+    <div class="menu-title">🌟 英语闯关冒险 🌟</div>
+    <div class="menu-sub">外研版（三起）三年级下册 · Unit 1-6 · 精校题库</div>
+    <div class="player-name-row">
+      <span>👤</span>
+      <input type="text" id="player-name-input" placeholder="输入名字" maxlength="8">
+      <span>的名字</span>
+    </div>
+    <div class="unit-grid" id="unit-grid"></div>
+    <button class="rank-btn" onclick="showRanking()">🏆 排行榜</button>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="screen" id="screen-intro">
+  <div class="intro-card">
+    <div class="intro-icon" id="intro-icon">🦁</div>
+    <div class="intro-title" id="intro-title">Unit 1 Animal Friends</div>
+    <div class="intro-theme" id="intro-theme">丛林探险 · 动物王国</div>
+    <div class="intro-info">
+      ⏱️ 游戏时间：<span>5 分钟</span>　🎯 约 <span>15 题</span><br>
+      🏆 全部来自课本，超纲内容已剔除！
+    </div>
+    <div class="name-input-group" style="margin-bottom:14px">
+      <label>确认你的名字</label>
+      <input type="text" id="intro-name-input" placeholder="你的名字" maxlength="8">
+    </div>
+    <button class="btn-primary-game" onclick="startGame()">🚀 出发！</button>
+    <button class="btn-secondary-game" onclick="showMenu()" style="width:100%">← 返回选单元</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="screen-game">
+  <div class="game-hud">
+    <div class="hud-score">⭐ <span id="score-display">0</span></div>
+    <div class="hud-qcount">题 <span id="qcount-display">0</span></div>
+  </div>
+  <div class="unit-theme-banner" id="game-banner">🌴 丛林探险</div>
+  <div class="unit-theme-sub" id="game-sub"></div>
+  <div class="question-card fade-up" id="question-card">
+    <div class="q-unit-badge" id="q-badge">UNIT 1</div>
+    <div class="q-type-label" id="q-type-label">题型</div>
+    <div class="q-emoji" id="q-emoji" style="display:none"></div>
+    <div class="q-word" id="q-word">Word</div>
+    <div class="q-hint" id="q-hint" style="display:none"></div>
+  </div>
+  <div class="options-grid" id="options-grid" style="margin-top:14px"></div>
+</div>
+
+<!-- RESULT -->
+<div class="screen" id="screen-result">
+  <div class="result-card fade-up">
+    <div class="result-grade" id="res-grade">🌟</div>
+    <div class="result-title" id="res-title">太棒了！</div>
+    <div class="result-sub" id="res-sub">继续加油！</div>
+    <div class="result-stars" id="res-stars">⭐⭐⭐</div>
+    <div class="result-stats">
+      <div class="stat-item"><div class="stat-val" id="res-correct">0</div><div class="stat-label">答对</div></div>
+      <div class="stat-item"><div class="stat-val" id="res-wrong">0</div><div class="stat-label">答错</div></div>
+      <div class="stat-item"><div class="stat-val" id="res-score">0</div><div class="stat-label">总分</div></div>
+    </div>
+    <div class="result-words">
+      <div class="result-words-title">📝 本轮表现</div>
+      <div class="result-words-list" id="res-words"></div>
+    </div>
+    <button class="btn-primary-game" onclick="showMenu()">🔄 再来一局</button>
+    <button class="btn-secondary-game" onclick="showRanking()">🏆 排行榜</button>
+  </div>
+</div>
+
+<!-- RANKING -->
+<div class="screen" id="screen-ranking">
+  <div class="rank-card fade-up">
+    <div class="rank-title">🏆 排行榜</div>
+    <div class="rank-tabs" id="rank-tabs"></div>
+    <div class="rank-list" id="rank-list"></div>
+    <button class="btn-secondary-game" onclick="showMenu()" style="width:100%;margin-top:14px">← 返回主页</button>
+  </div>
+</div>
+
+<script>
+/* ============================================
+   UNIT THEMES — 完全对照外研三下教材
+============================================ */
+const UNIT_THEMES = [
+  { id:1, code:'jungle', name:'Animal Friends',      zh:'动物朋友',    icon:'🦁', themeName:'丛林探险', banner:'🌴 丛林探险',   sub:'What are they? Are they...? 它们是什么动物？', deco:['🌴','🦋','🐸','🍀','🌿','🦎'] },
+  { id:2, code:'body',   name:'Know Your Body',     zh:'认识身体',    icon:'🫀', themeName:'身体探秘',   banner:'🫀 身体探秘',   sub:'Point to your... Touch your... 指向身体部位！', deco:['🧠','👁️','🦴','💪','🩺','🦷'] },
+  { id:3, code:'food',   name:'Yummy Food',         zh:'美味食物',    icon:'🍎', themeName:'美食乐园',   banner:'🍎 美食乐园',   sub:'Do you like...? Yes, I do. 你喜欢吃什么？', deco:['🍕','🍰','🥕','🍇','🍌','🧁'] },
+  { id:4, code:'hobby',  name:"What's Your Hobby",  zh:'兴趣爱好',    icon:'⚽', themeName:'兴趣乐园',   banner:'⚽ 兴趣乐园',   sub:"What do you like doing? I like doing... 你喜欢做什么？", deco:['🎨','📚','🎵','🏃','🎮','🎯'] },
+  { id:5, code:'time',   name:'What Time Is It',    zh:'时间认知',    icon:'⏰', themeName:'时间飞船',   banner:'⏰ 时间飞船',   sub:"It's time for... / It's time to... 该做什么了？", deco:['🚀','🪐','⭐','🌙','☀️','🌈'] },
+  { id:6, code:'week',   name:'A Great Week',       zh:'精彩一周',    icon:'📅', themeName:'精彩一周',   banner:'📅 精彩一周',   sub:"What day is it today? We have... 今天星期几？", deco:['📚','✏️','🎵','🏃','🎨','⚽'] },
+];
+
+/* ============================================
+   精校题库 — 完全对齐外研三下教材
+   核心原则：题目语言 ≠ 选项语言
+   en2cn      = 题目英文/图片 → 选中文
+   en2cn_full = 英文句子 → 选中文翻译
+   grammar_cn = 中文情境 → 选正确英文
+============================================ */
+const QUESTIONS = {
+
+  /* ────────────────────────────────────────
+     UNIT 1: Animal Friends
+     词汇（教材）：panda, elephant, bear, giraffe, monkey, tiger, ostrich, chameleon, lion, zebra, animal, dog, cat, big, small, fat, thin, tall, short, strong, white, brown, cute
+     句型（教材）：
+       What are they? → They are pandas.
+       Are they lions? → Yes, they are. / No, they aren't.
+       It's big and fat.
+  ──────────────────────────────────────── */
+  jungle: [
+    // ── 图片识词：英文动物 → 选中文 ──
+    { type:'en2cn', q:'🐼', opts:['大熊猫','小熊','长颈鹿','斑马'],     answer:'大熊猫' },
+    { type:'en2cn', q:'🐘', opts:['大象','老虎','熊','狮子'],             answer:'大象' },
+    { type:'en2cn', q:'🦒', opts:['长颈鹿','大象','斑马','猴子'],         answer:'长颈鹿' },
+    { type:'en2cn', q:'🦁', opts:['狮子','老虎','豹子','熊'],             answer:'狮子' },
+    { type:'en2cn', q:'🐯', opts:['老虎','狮子','豹子','熊'],             answer:'老虎' },
+    { type:'en2cn', q:'🐒', opts:['猴子','猩猩','老虎','大象'],           answer:'猴子' },
+    { type:'en2cn', q:'🦓', opts:['斑马','长颈鹿','大象','熊猫'],         answer:'斑马' },
+    { type:'en2cn', q:'🦩', opts:['鸵鸟','火烈鸟','鹤','企鹅'],           answer:'鸵鸟' },
+
+    // ── 描述特征：英文描述 → 选中文 ──
+    { type:'en2cn', q:'big and strong', opts:['又大又壮','又小又弱','又高又瘦','又胖又矮'],  answer:'又大又壮' },
+    { type:'en2cn', q:'small and cute', opts:['小巧可爱','又大又壮','又高又瘦','又胖又矮'],  answer:'小巧可爱' },
+    { type:'en2cn', q:'tall and strong', opts:['又高又壮','又矮又胖','小巧可爱','又瘦又矮'],  answer:'又高又壮' },
+    { type:'en2cn', q:'big and fat', opts:['又大又胖','又小又瘦','又高又壮','小巧可爱'],    answer:'又大又胖' },
+
+    // ── 核心句型：What are they? / Are they...? ──
+    { type:'en2cn_full', q:"Teacher: What are they?\nPupil: They are pandas.", opts:['它们是什么？它们是大熊猫。','它们在哪里？它们在动物园。','它们可爱吗？是的。','它们是动物吗？是的。'], answer:'它们是什么？它们是大熊猫。' },
+    { type:'en2cn_full', q:"Amy: Are they lions?\nTom: No, they aren't.", opts:['它们是狮子吗？不，它们不是。','它们是老虎吗？是的。','它们是什么？它们是熊。','它们可爱吗？是的。'], answer:'它们是狮子吗？不，它们不是。' },
+    { type:'en2cn_full', q:"Lingling: Look! They're tall!\nDaming: And strong!", opts:['看！它们好高！而且好壮！','看！它们很小！而且可爱！','看！它们在跑！而且在跳！','看！它们是斑马！而且矮！'], answer:'看！它们好高！而且好壮！' },
+
+    // ── 语法：Are they...? 肯定/否定回答 ──
+    { type:'grammar_cn', q:'🐘🦒 老师问："Are they giraffes?"\n大象和长颈鹿，你的正确回答是：', opts:["No, they aren't.","No, they are.","Yes, they aren't.","They are elephants."], answer:"No, they aren't." },
+    { type:'grammar_cn', q:'🦁🐯 老师说："Look! Are they tigers?"\n答："Yes, they are." 那是哪些动物？', opts:["Tiger — 老虎","Bear — 熊","Panda — 熊猫","Lion — 狮子"], answer:"Tiger — 老虎" },
+  ],
+
+  /* ────────────────────────────────────────
+     UNIT 2: Know Your Body
+     词汇（教材）：head, eye, ear, nose, mouth, leg, foot(feet), arm, hand, touch, point, wave, clap
+     句型（教材）：Point to your head. / Touch your nose. / Don't touch...!
+  ──────────────────────────────────────── */
+  body: [
+    // ── 图片识词：身体部位英文 → 选中文 ──
+    { type:'en2cn', q:'👁️', opts:['眼睛','耳朵','鼻子','嘴巴'],             answer:'眼睛' },
+    { type:'en2cn', q:'👂', opts:['耳朵','鼻子','嘴巴','头'],               answer:'耳朵' },
+    { type:'en2cn', q:'👃', opts:['鼻子','嘴巴','眼睛','耳朵'],             answer:'鼻子' },
+    { type:'en2cn', q:'👄', opts:['嘴巴','头','眼睛','耳朵'],               answer:'嘴巴' },
+    { type:'en2cn', q:'👤', opts:['头','脸','眼睛','鼻子'],                 answer:'头' },
+    { type:'en2cn', q:'💪', opts:['胳膊','手','腿','脚'],                   answer:'胳膊' },
+    { type:'en2cn', q:'✋', opts:['手','脚','腿','胳膊'],                   answer:'手' },
+    { type:'en2cn', q:'🦵', opts:['腿','脚','手','胳膊'],                   answer:'腿' },
+    { type:'en2cn', q:'🦶', opts:['脚','腿','手','胳膊'],                   answer:'脚' },
+
+    // ── 核心指令句：Point to... / Touch... ──
+    { type:'en2cn_full', q:"Teacher: Point to your head.\nPupil: [points]", opts:['指向你的头。','摸摸你的鼻子。','挥动你的手。','拍拍你的手。'], answer:'指向你的头。' },
+    { type:'en2cn_full', q:"Teacher: Touch your nose.\nPupil: [touches]", opts:['摸摸你的鼻子。','指向你的头。','拍拍你的手。','挥动你的胳膊。'], answer:'摸摸你的鼻子。' },
+    { type:'en2cn_full', q:"Teacher: Don't touch the machine!", opts:['不要碰机器！','指向你的眼睛！','摸摸你的耳朵！','拍拍你的手！'], answer:'不要碰机器！' },
+
+    // ── 语法：指令句型 ──
+    { type:'grammar_cn', q:'👆 老师说："Point to your eye."\n你应该指向哪里？', opts:['眼睛','鼻子','耳朵','嘴巴'], answer:'眼睛' },
+    { type:'grammar_cn', q:'👆 老师说："Touch your leg."\n你应该摸哪里？', opts:['腿','脚','手','胳膊'], answer:'腿' },
+    { type:'grammar_cn', q:'🚫 牌子写着 "Don\'t touch!" 是什么意思？', opts:['不要碰！','请触摸！','指向这里！','拍拍手！'], answer:'不要碰！' },
+  ],
+
+  /* ────────────────────────────────────────
+     UNIT 3: Yummy Food
+     词汇（教材）：rice, noodles, meat, fish, milk, cake, bread, fruit, juice, like, eat, drink
+     句型（教材）：
+       I like rice. / I don't like fish.
+       Do you like meat? → Yes, I do. / No, I don't.
+       Please give me some fish.
+  ──────────────────────────────────────── */
+  food: [
+    // ── 图片识词：食物英文 → 选中文 ──
+    { type:'en2cn', q:'🍚', opts:['米饭','面条','面包','蛋糕'],           answer:'米饭' },
+    { type:'en2cn', q:'🍜', opts:['面条','米饭','肉','水果'],             answer:'面条' },
+    { type:'en2cn', q:'🥩', opts:['肉','鱼','鸡肉','牛肉'],               answer:'肉' },
+    { type:'en2cn', q:'🐟', opts:['鱼','肉','鸡肉','米饭'],               answer:'鱼' },
+    { type:'en2cn', q:'🥛', opts:['牛奶','水','果汁','茶'],               answer:'牛奶' },
+    { type:'en2cn', q:'🍰', opts:['蛋糕','面包','米饭','面条'],           answer:'蛋糕' },
+    { type:'en2cn', q:'🍞', opts:['面包','蛋糕','面条','米饭'],           answer:'面包' },
+    { type:'en2cn', q:'🍇', opts:['水果','果汁','牛奶','米饭'],           answer:'水果' },
+
+    // ── 核心句型：Do you like...? I like... ──
+    { type:'en2cn_full', q:"Amy: Do you like fish?\nTom: Yes, I do.", opts:['你喜欢鱼吗？是的，我喜欢。','你喜欢肉吗？不，我不喜欢。','你喜欢米饭吗？是的，我喜欢。','你喜欢蛋糕吗？不，我不喜欢。'], answer:'你喜欢鱼吗？是的，我喜欢。' },
+    { type:'en2cn_full', q:"Daming: I like noodles.\nSam: I don't like noodles.", opts:['大明喜欢面条。萨姆不喜欢面条。','大明不喜欢面条。萨姆喜欢面条。','大明喜欢鱼。萨姆喜欢肉。','大明喜欢米饭。萨姆不喜欢面包。'], answer:'大明喜欢面条。萨姆不喜欢面条。' },
+    { type:'en2cn_full', q:"Amy: Please give me some fish.", opts:['请给我一些鱼。','请给我一些面包。','请给我一些蛋糕。','请给我一些米饭。'], answer:'请给我一些鱼。' },
+    { type:'en2cn_full', q:"Do you like milk?\nNo, I don't.", opts:['你喜欢牛奶吗？不，我不喜欢。','你喜欢果汁吗？是的，我喜欢。','你喜欢鱼吗？是的，我喜欢。','你喜欢肉吗？不，我不喜欢。'], answer:'你喜欢牛奶吗？不，我不喜欢。' },
+
+    // ── 语法：I like / I don't like ──
+    { type:'grammar_cn', q:'❤️ 你想说"我喜欢米饭"，英语是：', opts:["I like rice.","I don't like rice.","I like rices.","Rice I like."], answer:"I like rice." },
+    { type:'grammar_cn', q:'👎 你想说"我不喜欢面包"，英语是：', opts:["I don't like bread.","I don't like breads.","I not like bread.","Bread I don't like."], answer:"I don't like bread." },
+    { type:'grammar_cn', q:'🤔 问"你喜欢蛋糕吗？"英语是：', opts:["Do you like cake?","Are you like cake?","Do you likes cake?","You like cake?"], answer:"Do you like cake?" },
+  ],
+
+  /* ────────────────────────────────────────
+     UNIT 4: What's Your Hobby
+     词汇（教材）：hobby, swim, run, dance, draw, sing, read, ride a bike, fly a kite,
+                   make robots, make kites, cook food, skate on ice, insect, plant
+     句型（教材）：
+       What's your hobby?
+       What do you like doing? → I like swimming.
+       What does he/she like doing? → He/She likes...
+       注意：用的是 doing（动名词），不是 I like football
+  ──────────────────────────────────────── */
+  hobby: [
+    // ── 图片识词：活动英文 → 选中文 ──
+    { type:'en2cn', q:'🏊', opts:['游泳','跑步','跳舞','唱歌'],           answer:'游泳' },
+    { type:'en2cn', q:'🏃', opts:['跑步','跳舞','游泳','唱歌'],           answer:'跑步' },
+    { type:'en2cn', q:'💃', opts:['跳舞','跑步','游泳','画画'],           answer:'跳舞' },
+    { type:'en2cn', q:'🎨', opts:['画画','跳舞','唱歌','读书'],           answer:'画画' },
+    { type:'en2cn', q:'🎤', opts:['唱歌','跳舞','画画','读书'],           answer:'唱歌' },
+    { type:'en2cn', q:'📖', opts:['读书','画画','唱歌','跳舞'],           answer:'读书' },
+    { type:'en2cn', q:'🚴', opts:['骑自行车','跑步','游泳','跳舞'],       answer:'骑自行车' },
+    { type:'en2cn', q:'🪁', opts:['放风筝','骑自行车','跑步','游泳'],     answer:'放风筝' },
+
+    // ── 核心句型：What do you like doing? I like doing... ──
+    { type:'en2cn_full', q:"Amy: What's your hobby?\nDaming: I like swimming.", opts:['你的爱好是什么？我喜欢游泳。','你会游泳吗？是的。','你有多少爱好？一个。','你喜欢什么动物？熊猫。'], answer:'你的爱好是什么？我喜欢游泳。' },
+    { type:'en2cn_full', q:"What do you like doing?\nI like drawing.", opts:['你喜欢做什么？我喜欢画画。','你会画画吗？是的。','你有多少爱好？两个。','你喜欢什么动物？我喜欢猴子。'], answer:'你喜欢做什么？我喜欢画画。' },
+    { type:'en2cn_full', q:"Lingling: What does he like doing?\nTeacher: He likes reading.", opts:['他喜欢做什么？他喜欢读书。','他会读书吗？是的。','他是谁？他是大明。','他有多少书？很多。'], answer:'他喜欢做什么？他喜欢读书。' },
+    { type:'en2cn_full', q:"What do you like doing?\nI like dancing.", opts:['你喜欢做什么？我喜欢跳舞。','你会跳舞吗？是的。','你有多少爱好？一个。','你喜欢什么动物？熊猫。'], answer:'你喜欢做什么？我喜欢跳舞。' },
+
+    // ── 语法：like doing（动名词）─
+    { type:'grammar_cn', q:'⚽ 你想说"我喜欢骑自行车"，正确的是：', opts:["I like riding my bike.","I like ride bike.","I like to ride a bike.","Riding my bike I like."], answer:"I like riding my bike." },
+    { type:'grammar_cn', q:'🎨 你想说"他喜欢画画"，正确的是：', opts:["He likes drawing.","He like drawing.","He likes draw.","Drawing he likes."], answer:"He likes drawing." },
+    { type:'grammar_cn', q:'❓ 问"你喜欢放风筝吗？"英语是：', opts:["Do you like flying a kite?","Do you like fly a kite?","Are you like kite?","What do you kite?"], answer:"Do you like flying a kite?" },
+  ],
+
+  /* ────────────────────────────────────────
+     UNIT 5: What Time Is It
+     词汇（教材）：one, two, three... twelve, o'clock, time, get up, go to school,
+                   have breakfast, have lunch, have dinner, go to bed
+     句型（教材）：
+       What time is it? → It's seven o'clock.
+       It's time for school. / It's time to get up.
+       (教材不要求"我在7点做某事"的具体时间表达)
+  ──────────────────────────────────────── */
+  time: [
+    // ── 数字英语：阿拉伯数字 → 选英语单词 ──
+    { type:'en2cn', q:'1', opts:['one','two','three','four'],          answer:'one' },
+    { type:'en2cn', q:'3', opts:['three','one','five','seven'],        answer:'three' },
+    { type:'en2cn', q:'7', opts:['seven','one','nine','eleven'],       answer:'seven' },
+    { type:'en2cn', q:'12', opts:['twelve','ten','eleven','nine'],     answer:'twelve' },
+    { type:'en2cn', q:'5', opts:['five','three','seven','nine'],       answer:'five' },
+    { type:'en2cn', q:'10', opts:['ten','seven','nine','twelve'],      answer:'ten' },
+
+    // ── 看图说时间 ──
+    { type:'en2cn', q:'🕐', opts:['一点钟','七点钟','三点钟','十二点'],  answer:'一点钟' },
+    { type:'en2cn', q:'🕖', opts:['七点钟','五点钟','十点钟','三点钟'],  answer:'七点钟' },
+    { type:'en2cn', q:'🕛', opts:['十二点钟','十点钟','三点钟','五点钟'],answer:'十二点钟' },
+
+    // ── 核心句型：What time is it? / It's time for... ──
+    { type:'en2cn_full', q:"Amy: What time is it?\nTom: It's seven o'clock.", opts:['几点了？七点了。','今天星期几？星期一。','你叫什么？我叫汤姆。','你喜欢什么？游泳。'], answer:'几点了？七点了。' },
+    { type:'en2cn_full', q:"Lingling: It's time for school!", opts:['该上学了！','该起床了！','该睡觉了！','该吃午饭了！'], answer:'该上学了！' },
+    { type:'en2cn_full', q:"Sam: It's time to get up!", opts:['该起床了！','该上学了！','该吃早饭了！','该睡觉了！'], answer:'该起床了！' },
+
+    // ── 语法：整点时间表达 ──
+    { type:'grammar_cn', q:'⏰ "现在是五点整"英语是：', opts:["It's five o'clock.","It's five.","Five o'clock it is.","It's five clock."], answer:"It's five o'clock." },
+    { type:'grammar_cn', q:'📅 问"现在几点？"英语是：', opts:["What time is it?","What time is?","How time is it?","What's time?"], answer:"What time is it?" },
+    { type:'grammar_cn', q:'🍎 该吃午饭了，英语是：', opts:["It's time for lunch.","It's time to lunch.","Lunch time is.","Time for lunch."], answer:"It's time for lunch." },
+    { type:'grammar_cn', q:'🛏️ 该睡觉了，英语是：', opts:["It's time to go to bed.","It's time for bed.","Bed time is.","Go to bed time."], answer:"It's time to go to bed." },
+  ],
+
+  /* ────────────────────────────────────────
+     UNIT 6: A Great Week（不是职业！是"精彩的一周"！）
+     词汇（教材）：Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday,
+                   Chinese, Maths, English, Music, Art, PE, Science
+     句型（教材）：
+       What day is it today? → It's Monday.
+       What do you have on Monday? → We have English and Art.
+       It's a great week!
+  ──────────────────────────────────────── */
+  week: [
+    // ── 图片识词：星期 → 选中文 ──
+    { type:'en2cn', q:'📅 Monday', opts:['星期一','星期二','星期日','星期五'], answer:'星期一' },
+    { type:'en2cn', q:'📅 Wednesday', opts:['星期三','星期二','星期一','星期四'], answer:'星期三' },
+    { type:'en2cn', q:'📅 Friday', opts:['星期五','星期六','星期四','星期日'], answer:'星期五' },
+    { type:'en2cn', q:'📅 Sunday', opts:['星期日','星期六','星期五','星期一'], answer:'星期日' },
+
+    // ── 图片识词：科目 → 选中文 ──
+    { type:'en2cn', q:'📝', opts:['语文','数学','英语','音乐'],       answer:'语文' },
+    { type:'en2cn', q:'🔢', opts:['数学','语文','英语','美术'],       answer:'数学' },
+    { type:'en2cn', q:'🔤', opts:['英语','语文','数学','体育'],       answer:'英语' },
+    { type:'en2cn', q:'🎵', opts:['音乐','美术','体育','语文'],       answer:'音乐' },
+    { type:'en2cn', q:'🎨', opts:['美术','音乐','体育','数学'],       answer:'美术' },
+    { type:'en2cn', q:'⚽', opts:['体育','音乐','美术','英语'],        answer:'体育' },
+
+    // ── 核心句型：What day is it today? / We have... ──
+    { type:'en2cn_full', q:"Amy: What day is it today?\nTom: It's Monday.", opts:['今天星期几？星期一。','今天几号？星期一。','今天有什么课？英语和美术。','今天是星期一吗？是的。'], answer:'今天星期几？星期一。' },
+    { type:'en2cn_full', q:"Teacher: What do you have on Wednesday?\nPupil: We have English and Art.", opts:['星期三有什么课？有英语和美术课。','星期三几点了？七点。','你喜欢星期三吗？喜欢。','星期三你几点起床？六点。'], answer:'星期三有什么课？有英语和美术课。' },
+    { type:'en2cn_full', q:"Daming: It's a great week!", opts:['这是精彩的一周！','今天是星期一！','我有很多课！','我很喜欢星期三！'], answer:'这是精彩的一周！' },
+    { type:'en2cn_full', q:"Lingling: What day is it today?\nSam: It's Friday!", opts:['今天星期几？星期五！','今天几号？星期五！','今天有英语课吗？是的！','今天是星期一吗？不是！'], answer:'今天星期几？星期五！' },
+
+    // ── 语法：星期首字母大写 / We have... ──
+    { type:'grammar_cn', q:'📅 哪个是"星期二"的正确拼写？', opts:["Tuesday","tusday","Thusday","TuesDay"], answer:"Tuesday" },
+    { type:'grammar_cn', q:'📅 哪个是"星期四"的正确拼写？', opts:["Thursday","Thusday","Thirsday","Thurday"], answer:"Thursday" },
+    { type:'grammar_cn', q:'🗓️ 问"星期五有什么课？"英语是：', opts:["What do you have on Friday?","What day is Friday?","How is Friday?","Friday is what day?"], answer:"What do you have on Friday?" },
+    { type:'grammar_cn', q:'🏫 答"我们有英语课"英语是：', opts:["We have English.","We have a English.","English we have.","Have we English."], answer:"We have English." },
+  ],
+};
+
+/* ============================================
+   GAME STATE
+============================================ */
+let state = {
+  playerName: '',
+  currentUnit: null,
+  questions: [],
+  currentQ: 0,
+  score: 0,
+  correct: 0,
+  wrong: 0,
+  answered: [],
+  timerInterval: null,
+  timeLeft: 300,
+};
+
+/* ============================================
+   PARTICLES
+============================================ */
+let particles = [], pCanvas, pCtx;
+function initParticles() {
+  pCanvas = document.getElementById('particles');
+  pCtx = pCanvas.getContext('2d');
+  resizeP();
+  window.addEventListener('resize', resizeP);
+  setTimeout(createParticles, 100);
+  requestAnimationFrame(drawParticles);
+}
+function resizeP() { pCanvas.width = window.innerWidth; pCanvas.height = window.innerHeight; }
+function createParticles() {
+  particles = [];
+  const colors = ['#a855f7','#3b82f6','#fbbf24','#4ade80','#f472b6','#fb923c'];
+  for (let i = 0; i < 40; i++) {
+    particles.push({ x:Math.random()*pCanvas.width, y:Math.random()*pCanvas.height,
+      r:Math.random()*2.5+0.5, vx:(Math.random()-0.5)*0.3, vy:-Math.random()*0.4-0.1,
+      alpha:Math.random()*0.4+0.1, color:colors[Math.floor(Math.random()*colors.length)] });
+  }
+}
+function drawParticles() {
+  pCtx.clearRect(0,0,pCanvas.width,pCanvas.height);
+  particles.forEach(p => {
+    pCtx.beginPath(); pCtx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    pCtx.fillStyle = p.color; pCtx.globalAlpha = p.alpha; pCtx.fill();
+    p.x+=p.vx; p.y+=p.vy;
+    if (p.y<-10){ p.y=pCanvas.height+10; p.x=Math.random()*pCanvas.width; }
+    if (p.x<-10) p.x=pCanvas.width+10;
+    if (p.x>pCanvas.width+10) p.x=-10;
+  });
+  pCtx.globalAlpha=1;
+  requestAnimationFrame(drawParticles);
+}
+
+/* ============================================
+   DECORATIONS
+============================================ */
+function setDecorations(unit) {
+  const c = document.getElementById('deco-container');
+  c.innerHTML = '';
+  if (!unit) return;
+  const pos = [{top:'8%',left:'5%'},{top:'15%',right:'6%'},{bottom:'20%',left:'4%'},{bottom:'10%',right:'8%'},{top:'40%',left:'2%'},{top:'60%',right:'3%'}];
+  (unit.deco||[]).slice(0,6).forEach((d,i) => {
+    const el = document.createElement('div');
+    el.className = 'float-deco'; el.textContent = d;
+    Object.keys(pos[i]).forEach(k => el.style[k]=pos[i][k]);
+    el.style.animationDelay = (i*0.8)+'s';
+    c.appendChild(el);
+  });
+}
+
+/* ============================================
+   NAVIGATION
+============================================ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+function setTheme(unit) {
+  document.body.className = 'theme-'+(unit?unit.code:'menu');
+  setDecorations(unit);
+}
+function showMenu() {
+  stopTimer(); setTheme(null);
+  showScreen('menu');
+  document.getElementById('timer-bar').style.display='none';
+}
+function showRanking() { setTheme(null); showScreen('ranking'); renderRanking(); }
+function showIntro(unit) {
+  state.currentUnit = unit; setTheme(unit);
+  document.getElementById('intro-icon').textContent = unit.icon;
+  document.getElementById('intro-title').textContent = `Unit ${unit.id} ${unit.name}`;
+  document.getElementById('intro-theme').textContent = `${unit.themeName} · ${unit.zh}`;
+  document.getElementById('intro-name-input').value = document.getElementById('player-name-input').value||'';
+  showScreen('intro');
+}
+
+/* ============================================
+   MENU BUILDER
+============================================ */
+function buildMenu() {
+  const grid = document.getElementById('unit-grid');
+  grid.innerHTML = '';
+  UNIT_THEMES.forEach(unit => {
+    const card = document.createElement('div');
+    card.className = 'unit-card';
+    card.onclick = () => showIntro(unit);
+    card.innerHTML = `
+      <div class="unit-num">UNIT ${unit.id}</div>
+      <div class="unit-icon">${unit.icon}</div>
+      <div class="unit-name">${unit.zh}</div>
+      <div class="unit-theme">${unit.themeName}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+/* ============================================
+   QUESTION TYPE LABELS
+============================================ */
+const Q_TYPE_LABELS = {
+  en2cn:       '🌟 看图，选中文意思',
+  en2cn_full:  '🎧 读句子，选中文翻译',
+  grammar_cn:   '📝 读情景，选正确英文',
+};
+
+/* ============================================
+   GAME LOGIC
+============================================ */
+function generateQuestions(unit) {
+  const pool = QUESTIONS[unit.code]||[];
+  return [...pool].sort(()=>Math.random()-0.5).slice(0, Math.min(pool.length, 15));
+}
+
+function startGame() {
+  const name = document.getElementById('intro-name-input').value.trim()||'小学生';
+  state.playerName = name;
+  state.currentQ = 0; state.score = 0; state.correct = 0; state.wrong = 0;
+  state.answered = []; state.timeLeft = 300;
+  state.questions = generateQuestions(state.currentUnit);
+  setTheme(state.currentUnit);
+  showScreen('game');
+  document.getElementById('timer-bar').style.display='block';
+  document.getElementById('game-banner').textContent = state.currentUnit.banner;
+  document.getElementById('game-sub').textContent = state.currentUnit.sub;
+  document.getElementById('score-display').textContent='0';
+  document.getElementById('qcount-display').textContent=state.questions.length;
+  startTimer();
+  renderQuestion();
+}
+
+function startTimer() {
+  clearInterval(state.timerInterval);
+  const start = Date.now(), duration = state.timeLeft*1000;
+  state.timerInterval = setInterval(() => {
+    const r = Math.max(0, duration-(Date.now()-start));
+    document.getElementById('timer-fill').style.width=(r/duration*100)+'%';
+    if (r<=0){ clearInterval(state.timerInterval); endGame(); }
+  }, 200);
+}
+function stopTimer() { clearInterval(state.timerInterval); }
+
+/* ============================================
+   RENDER QUESTION
+============================================ */
+function renderQuestion() {
+  const q = state.questions[state.currentQ];
+  const unit = state.currentUnit;
+  document.getElementById('score-display').textContent = state.score;
+  document.getElementById('qcount-display').textContent = state.currentQ+1;
+  document.getElementById('q-badge').textContent = `UNIT ${unit.id} · ${unit.name}`;
+  document.getElementById('q-type-label').textContent = Q_TYPE_LABELS[q.type]||'🌟';
+
+  const card = document.getElementById('question-card');
+  card.classList.remove('fade-up'); void card.offsetWidth; card.classList.add('fade-up');
+
+  const qWord = document.getElementById('q-word');
+  const qEmoji = document.getElementById('q-emoji');
+  const qHint = document.getElementById('q-hint');
+
+  // 判断：图片题用emoji大图，文字题用单词大字
+  const isEmojiPic = /[\u{1F300}-\u{1F9FF}]/u.test(q.q) && q.q.length<=5 && !q.q.includes('\n');
+  const isEnglishOnly = /^[a-zA-Z\s]+$/.test(q.q.trim());
+  const isTimePic = ['🕐','🕖','🕛'].includes(q.q.trim());
+  const isDay = ['📅 Monday','📅 Wednesday','📅 Friday','📅 Sunday'].includes(q.q);
+  const isSubject = ['📝','🔢','🔤','🎵','🎨','⚽'].includes(q.q);
+
+  if (isEmojiPic || isTimePic) {
+    qEmoji.style.display='block'; qEmoji.textContent=q.q;
+    qWord.style.display='block'; qWord.style.fontSize='clamp(18px,3.5vw,28px)';
+    qWord.textContent = '这是什么？选中文意思';
+    qHint.style.display='none';
+  } else if (isDay) {
+    qEmoji.style.display='block'; qEmoji.textContent='📅';
+    qWord.style.display='block'; qWord.style.fontSize='clamp(20px,4vw,32px)';
+    qWord.textContent = q.q.replace('📅 ','');
+    qHint.style.display='block'; qHint.textContent='选中文意思';
+  } else if (isSubject) {
+    qEmoji.style.display='block'; qEmoji.textContent=q.q;
+    qWord.style.display='block'; qWord.style.fontSize='clamp(20px,4vw,30px)';
+    qWord.textContent = '这是什么课？选中文';
+    qHint.style.display='none';
+  } else {
+    qEmoji.style.display='none';
+    qWord.style.display='block';
+    qWord.style.fontSize = q.q.includes('\n') ? 'clamp(17px,3vw,26px)' : 'clamp(22px,4.5vw,38px)';
+    qWord.textContent = q.q;
+    qHint.style.display='none';
+  }
+
+  // 选项
+  const grid = document.getElementById('options-grid');
+  grid.innerHTML = '';
+  q.opts.forEach((opt,i) => {
+    if (!opt) return;
+    const btn = document.createElement('button');
+    btn.className='opt-btn fade-up'; btn.style.animationDelay=(i*0.06)+'s';
+    btn.textContent=opt; btn.onclick=()=>selectAnswer(btn,opt,q);
+    grid.appendChild(btn);
+  });
+}
+
+/* ============================================
+   ANSWER
+============================================ */
+function selectAnswer(btn,opt,q) {
+  const correct = (opt===q.answer);
+  document.querySelectorAll('.opt-btn').forEach(b=>b.disabled=true);
+  if (correct) {
+    btn.classList.add('correct'); state.score+=10; state.correct++;
+    playSound('correct'); showFeedback('✅','#4ade80');
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.opt-btn').forEach(b=>{ if(b.textContent===q.answer) b.classList.add('correct'); });
+    state.wrong++; playSound('wrong'); showFeedback('❌','#ef4444');
+  }
+  state.answered.push({q:q.q.replace('\n',' '),correct,answer:q.answer});
+  setTimeout(() => {
+    state.currentQ++;
+    if (state.currentQ>=state.questions.length) endGame();
+    else renderQuestion();
+  }, 1000);
+}
+
+function showFeedback(emoji,color) {
+  const ov = document.getElementById('feedback-overlay');
+  const tx = document.getElementById('feedback-text');
+  tx.textContent=emoji; tx.style.color=color;
+  ov.classList.add('show');
+  setTimeout(()=>ov.classList.remove('show'),800);
+}
+
+/* ============================================
+   RESULT
+============================================ */
+function endGame() {
+  stopTimer(); setTheme(state.currentUnit); showScreen('result');
+  document.getElementById('timer-bar').style.display='none';
+  const total=state.questions.length, pct=total>0?state.correct/total:0;
+  let grade,title,sub;
+  if (pct>=0.9){ grade='🏆'; title='满分王者！太厉害了！'; sub='你是英语小达人！'; }
+  else if (pct>=0.7){ grade='🌟'; title='太棒了！继续加油！'; sub='你真是个英语小高手！'; }
+  else if (pct>=0.5){ grade='👍'; title='还不错！继续努力！'; sub='再练一练，你会更厉害！'; }
+  else if (pct>=0.3){ grade='💪'; title='加油！多练就会了！'; sub='别灰心，每天进步一点点！'; }
+  else{ grade='🌱'; title='继续加油！'; sub='英语需要多听多说，试试再来一局！'; }
+  document.getElementById('res-grade').textContent=grade;
+  document.getElementById('res-title').textContent=title;
+  document.getElementById('res-sub').textContent=sub;
+  document.getElementById('res-stars').textContent='⭐'.repeat(Math.ceil(pct*5))||'⭐';
+  document.getElementById('res-correct').textContent=state.correct;
+  document.getElementById('res-wrong').textContent=state.wrong;
+  document.getElementById('res-score').textContent=state.score;
+  document.getElementById('res-words').innerHTML=state.answered.map((a,i)=>
+    `${a.correct?'✅':'❌'} ${a.q.slice(0,18)}${a.q.length>18?'...':''} → ${a.answer}`
+  ).join('<br>')||'无';
+  saveScore(state.currentUnit,state.playerName,state.score,state.correct,state.wrong);
+  playSound(pct>=0.5?'win':'lose');
+}
+
+/* ============================================
+   RANKING
+============================================ */
+function saveScore(unit,name,score,correct,wrong) {
+  const data=JSON.parse(localStorage.getItem('rank_'+unit.code)||'[]');
+  data.push({name,score,correct,wrong,time:Date.now()});
+  data.sort((a,b)=>b.score-a.score); data.splice(10);
+  localStorage.setItem('rank_'+unit.code,JSON.stringify(data));
+  const all=JSON.parse(localStorage.getItem('rank_all')||'[]');
+  all.push({name,score,correct,wrong,time:Date.now(),unit:unit.id,unitName:unit.zh});
+  all.sort((a,b)=>b.score-a.score); all.splice(20);
+  localStorage.setItem('rank_all',JSON.stringify(all));
+}
+function renderRanking() {
+  const tabs=document.getElementById('rank-tabs');
+  const units=[{id:'all',name:'总榜',icon:'🏆'},...UNIT_THEMES.map(u=>({id:u.code,name:u.zh,icon:u.icon}))];
+  tabs.innerHTML=units.map(u=>`<button class="rank-tab${u.id==='all'?' active':''}" onclick="switchRankTab('${u.id}',this)">${u.icon} ${u.name}</button>`).join('');
+  window._currentRankTab='all'; renderRankList('all');
+}
+function switchRankTab(tabId,btn) {
+  window._currentRankTab=tabId;
+  document.querySelectorAll('.rank-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active'); renderRankList(tabId);
+}
+function renderRankList(tabId) {
+  const list=document.getElementById('rank-list');
+  const data=JSON.parse(localStorage.getItem(tabId==='all'?'rank_all':'rank_'+tabId)||'[]');
+  if(data.length===0){ list.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.4);padding:40px;font-size:13px">还没有记录，快去玩一局吧！</div>'; return; }
+  const medals=['🥇','🥈','🥉'];
+  list.innerHTML=data.map((e,i)=>`<div class="rank-item"><div class="rank-medal">${medals[i]||(i+1)}</div><div><div class="rank-name">${e.name}</div>${e.unitName?`<div class="rank-unit">Unit ${e.unit} · ${e.unitName}</div>`:''}</div><div class="rank-score">${e.score}分</div></div>`).join('');
+}
+
+/* ============================================
+   SOUND
+============================================ */
+let audioCtx;
+function initAudio(){ audioCtx=new(window.AudioContext||window.webkitAudioContext)(); }
+function playTone(freq,dur,type='sine',vol=0.3){
+  if(!audioCtx) return;
+  try{
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type; o.frequency.setValueAtTime(freq,audioCtx.currentTime);
+    g.gain.setValueAtTime(vol,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime+dur);
+  }catch(e){}
+}
+function playSound(type){
+  if(!audioCtx) initAudio();
+  if(!audioCtx) return;
+  if(type==='correct'){ playTone(523,.1,.3); setTimeout(()=>playTone(659,.15,.3),100); setTimeout(()=>playTone(784,.2,.25),200); }
+  else if(type==='wrong'){ playTone(300,.15,'sawtooth',.2); setTimeout(()=>playTone(250,.2,'sawtooth',.15),150); }
+  else if(type==='win'){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,.3,.2),i*150)); }
+  else if(type==='lose'){ [400,350,300].forEach((f,i)=>setTimeout(()=>playTone(f,.3,.2),i*200)); }
+}
+
+/* ============================================
+   INIT
+============================================ */
+document.addEventListener('DOMContentLoaded',()=>{ buildMenu(); initParticles(); document.getElementById('player-name-input').focus(); });
+</script>
+</body>
+</html>
